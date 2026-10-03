@@ -6,12 +6,16 @@
    - SortableJS (cdnjs) and Google Fonts are cached the first time they load and served from the cache after
      that. If one was never cached and the network fails, the page goes on without it: system fonts, and the
      plan's menus instead of drag and drop.
+   - The recipe library (library.json, about 3 MB) is not part of the shell: the page asks for it the first time
+     Meals opens, as library.json?v=<hash of the library>, and the worker keeps that copy in a cache named by the
+     same hash. A build with the same library keeps the copy a phone already has; a new library is a new name.
    Every build has a new VERSION (a hash of the files), so a new build installs a new worker, which takes over at
    once and deletes the caches of older builds. Caches are named cb-* so other apps on the same origin keep
    theirs. */
-const VERSION = "a91fabd0ae40";
+const VERSION = "81b5bef1aa02";
 const SHELL = "cb-shell-" + VERSION;
 const RUNTIME = "cb-runtime-v1";
+const LIBRARY = "cb-lib-66456284abd3";
 const SHELL_FILES = ["./index.html", "./manifest.webmanifest", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./favicon.ico", "./icon.svg"];
 const INDEX = new URL("./index.html", self.location.href).href;
 const CDN = /^https:\/\/(cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//;
@@ -29,7 +33,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const names = await caches.keys();
-    await Promise.all(names.filter((n) => n.startsWith("cb-") && n !== SHELL && n !== RUNTIME).map((n) => caches.delete(n)));
+    await Promise.all(names.filter((n) => n.startsWith("cb-") && n !== SHELL && n !== RUNTIME && n !== LIBRARY).map((n) => caches.delete(n)));
     await self.clients.claim();
   })());
 });
@@ -39,8 +43,21 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   if (req.mode === "navigate") { event.respondWith(openPage(event)); return; }
   if (CDN.test(req.url)) { event.respondWith(fromCdn(req)); return; }
-  if (new URL(req.url).origin === self.location.origin) event.respondWith(fromShell(req));
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+  if (/\/library\.json$/.test(url.pathname)) { event.respondWith(fromLibrary(req)); return; }
+  event.respondWith(fromShell(req));
 });
+
+/* The recipe library: the cached copy of this version, else the network (kept for next time). */
+async function fromLibrary(req) {
+  const cache = await caches.open(LIBRARY);
+  const hit = await cache.match(req);
+  if (hit) return hit;
+  const res = await fetch(req);
+  if (res && res.ok && res.type === "basic") await cache.put(req, res.clone());
+  return res;
+}
 
 /* The page: network first (checked with the server, past the 10-minute HTTP cache, so a new build shows on the
    next launch), the cached copy when the network fails or is slow. */
@@ -84,14 +101,21 @@ function offline(url) {
   return Response.error();
 }
 
-/* The page sends what it loaded before this worker was in charge (the fonts, SortableJS) to be cached too. */
+/* The page sends what it loaded before this worker was in charge (the fonts, SortableJS, the recipe library) to
+   be cached too. */
 self.addEventListener("message", (event) => {
   const d = event.data || {};
   if (d.type !== "cache" || !Array.isArray(d.urls)) return;
   event.waitUntil((async () => {
     const cache = await caches.open(RUNTIME);
     for (const u of d.urls.slice(0, 40)) {
-      if (typeof u !== "string" || !CDN.test(u)) continue;
+      if (typeof u !== "string") continue;
+      let url = null; try { url = new URL(u); } catch (e) { continue; }
+      if (url.origin === self.location.origin && /\/library\.json$/.test(url.pathname)) {
+        try { const lib = await caches.open(LIBRARY); if (!(await lib.match(u))) { const res = await fetch(u); if (res.ok) await lib.put(u, res); } } catch (e) { /* next time */ }
+        continue;
+      }
+      if (!CDN.test(u)) continue;
       try {
         if (await cache.match(u, { ignoreVary: true })) continue;
         let res = null;
