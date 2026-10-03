@@ -1,0 +1,38 @@
+{
+  "name": "Court & Barbell",
+  "short_name": "Court Barbell",
+  "description": "Dylan's 12-week lifting and tennis plan: today's sessions with their loads, the week, meals and progress.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ecf1ef",
+  "theme_color": "#0f1f1c",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": [
+    "fitness",
+    "health",
+    "sports"
+  ],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
