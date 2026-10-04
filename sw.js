@@ -12,10 +12,10 @@
    Every build has a new VERSION (a hash of the files), so a new build installs a new worker, which takes over at
    once and deletes the caches of older builds. Caches are named cb-* so other apps on the same origin keep
    theirs. */
-const VERSION = "81b5bef1aa02";
+const VERSION = "180794da3a94";
 const SHELL = "cb-shell-" + VERSION;
 const RUNTIME = "cb-runtime-v1";
-const LIBRARY = "cb-lib-66456284abd3";
+const LIBRARY = "cb-lib-810df7aa3e6b";
 const SHELL_FILES = ["./index.html", "./manifest.webmanifest", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./favicon.ico", "./icon.svg"];
 const INDEX = new URL("./index.html", self.location.href).href;
 const CDN = /^https:\/\/(cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//;
