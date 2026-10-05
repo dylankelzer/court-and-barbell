@@ -12,7 +12,7 @@
    Every build has a new VERSION (a hash of the files), so a new build installs a new worker, which takes over at
    once and deletes the caches of older builds. Caches are named cb-* so other apps on the same origin keep
    theirs. */
-const VERSION = "c5c9c2e1e4aa";
+const VERSION = "04753a8959e7";
 const SHELL = "cb-shell-" + VERSION;
 const RUNTIME = "cb-runtime-v1";
 const LIBRARY = "cb-lib-810df7aa3e6b";
